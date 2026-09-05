@@ -80,6 +80,17 @@ export interface GMProps {
    * @param callback
    */
   mainGMCListener: (callback: (v: any) => void) => void;
+  /** 监听 MCP Agent Run 的 tool call、result 和 error 事件 */
+  agentRunListener: (callback: (v: {
+    type?: 'tool_call' | 'tool_result' | 'tool_error' | string;
+    tool?: string;
+    name?: string;
+    arguments?: any;
+    result?: any;
+    error?: any;
+  }) => void) => () => void;
+  /** 创建显示 Agent Run tool calls 的浮动面板 */
+  createAgentRunPanel: (options?: { title?: string }) => HTMLElement & { destroy: () => void };
   /**
    * 监听子应用尺寸变化
    * @param callback

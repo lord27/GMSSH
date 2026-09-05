@@ -3,6 +3,27 @@
 
 ---
 
+## MCP Agent
+
+后端提供 MCP stdio 和 SSE 两种传输：
+
+```bash
+# MCP stdio（供桌面 Agent 配置启动）
+python -m app.mcp.stdio
+
+# MCP SSE（默认监听 127.0.0.1:8765）
+python -m app.mcp.http
+```
+
+SSE 入口为 `/mcp/sse`，消息入口为 `/mcp/message?sessionId=...`。当前暴露
+`ssh_connect`、`ssh_disconnect`、`ssh_exec` 和 `ssh_list_sessions`；需要由宿主应用注入
+授权的 `SshToolAdapter`，默认实现会拒绝执行 SSH 操作。
+
+Agent Run 事件通过前端 SDK 的 `agentRun` 消息发送，GUI 可调用
+`$gm.createAgentRunPanel()` 显示 tool call、result 和 error。
+
+---
+
 ## 一、开发规范
 
 ## 1.1 项目结构建议

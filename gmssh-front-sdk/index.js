@@ -19,6 +19,7 @@
         gmcCallback: null,
         serveActiveCallback: null,
         extAppStatusCallback: null,
+        agentRunCallbacks: new Set(),
     };
     //  获取url参数
     const getURLParams = (url) => {
@@ -77,6 +78,9 @@
                 state.extAppStatusCallback(payload);
             }
         },
+        agentRun: (payload) => {
+            state.agentRunCallbacks.forEach((fn) => fn(payload));
+        },
     };
 
     // 统一消息处理函数
@@ -118,6 +122,48 @@
     // 监听 extAppStatus 消息
     window.$gm.extAppStatusListener = (callback) => {
         state.extAppStatusCallback = callback;
+    };
+
+    window.$gm.agentRunListener = (callback) => {
+        if (typeof callback !== 'function') {
+            return () => {};
+        }
+        state.agentRunCallbacks.add(callback);
+        return () => state.agentRunCallbacks.delete(callback);
+    };
+
+    window.$gm.createAgentRunPanel = function (options = {}) {
+        const panel = document.createElement('section');
+        panel.setAttribute('aria-label', 'Agent Run');
+        panel.style.cssText = [
+            'position:fixed', 'right:12px', 'bottom:12px', 'z-index:9999',
+            'width:min(420px, calc(100vw - 24px))', 'max-height:45vh', 'overflow:auto',
+            'padding:12px', 'border:1px solid rgba(127,127,127,.35)', 'border-radius:8px',
+            'background:var(--agent-run-background, #17191d)', 'color:var(--agent-run-color, #f4f5f7)',
+            'font:12px/1.45 ui-monospace, SFMono-Regular, Consolas, monospace',
+            'box-shadow:0 8px 30px rgba(0,0,0,.28)',
+        ].join(';');
+        const title = document.createElement('strong');
+        title.textContent = options.title || 'Agent Run';
+        panel.appendChild(title);
+        const list = document.createElement('div');
+        list.style.marginTop = '8px';
+        panel.appendChild(list);
+        document.body.appendChild(panel);
+
+        const unsubscribe = window.$gm.agentRunListener((event = {}) => {
+            const row = document.createElement('div');
+            row.style.cssText = 'padding:6px 0;border-top:1px solid rgba(127,127,127,.2);white-space:pre-wrap;word-break:break-word';
+            const name = event.tool || event.name || event.type || 'event';
+            row.textContent = `${name}: ${JSON.stringify(event.arguments || event.result || event.error || event)}`;
+            list.appendChild(row);
+            panel.scrollTop = panel.scrollHeight;
+        });
+        panel.destroy = () => {
+            unsubscribe();
+            panel.remove();
+        };
+        return panel;
     };
     // ====== 保持不变的鼠标监听逻辑 ======
     document.onmousemove = (e) => {
